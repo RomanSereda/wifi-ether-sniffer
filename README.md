@@ -16,12 +16,12 @@
     pip install pyserial
     
     sudo usermod -aG dialout <username>
-    sudo chmod -R 777 /dev/ttyS3
+    sudo chmod -R 777 /dev/<tty> (ttyS1, ttyS2, ttyS3.... COM serial port)
     
     wget https://dl.espressif.com/dl/xtensa-lx106-elf-gcc8_4_0-esp-2020r3-linux-amd64.tar.gz
     mkdir -p ~/.espressif
     cd ~/.espressif
-    tar -xzf ~//xtensa-lx106-elf-gcc8_4_0-esp-2020r3-linux-amd64.tar.gz
+    tar -xzf ~/xtensa-lx106-elf-gcc8_4_0-esp-2020r3-linux-amd64.tar.gz
     git clone --recursive https://github.com/espressif/ESP8266_RTOS_SDK.git
     
     export PATH="$PATH:$HOME/.espressif/xtensa-lx106-elf/bin"
