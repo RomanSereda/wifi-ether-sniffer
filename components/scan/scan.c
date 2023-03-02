@@ -8,98 +8,28 @@
 #include "freertos/event_groups.h"
 #include "parser.h"
 
-#ifdef DEBUG
-#include "esp_log.h"
-#define TAG "scan"
-#define MAC_HEADER_LEN 24
-#define SCAN_DATA_LEN 112
-#define MAC_HDR_LEN_MAX 40
-static char printbuf[256];
-#endif
-
 static void scan_cb(void* buf, wifi_promiscuous_pkt_type_t type)
 {
-    struct frame_data_t data;
+    struct frame_data_t data = {0};
     parse(buf, type, &data);
 
-#ifdef DEBUG
-    wifi_pkt_rx_ctrl_t* rx_ctrl = (wifi_pkt_rx_ctrl_t*)buf;
-    uint8_t* frame = (uint8_t*)(rx_ctrl + 1);
-    uint32_t len = rx_ctrl->sig_mode ? rx_ctrl->HT_length : rx_ctrl->legacy_length;
-    uint32_t i;
-
-    uint8_t total_num = 1, count = 0;
-    uint16_t seq_buf = 0;
-
-    if ((rx_ctrl->aggregation) && (type != WIFI_PKT_MISC)) {
-        total_num = rx_ctrl->ampdu_cnt;
-    }
-
-    for (count = 0; count < total_num; count++) {
-        if (total_num > 1) {
-            len = *((uint16_t*)(frame + MAC_HDR_LEN_MAX + 2 * count));
-
-            if (seq_buf == 0) {
-                seq_buf = *((uint16_t*)(frame + 22)) >> 4;
-            }
-            ESP_LOGI(TAG, "seq_num:%d, total_num:%d\r\n", seq_buf, total_num);
-        }
-
-        switch (type) {
-            case WIFI_PKT_MGMT:
-                ESP_LOGI(TAG, "Rx mgmt pkt len:%d", len);
-                break;
-
-            case WIFI_PKT_CTRL:
-                ESP_LOGI(TAG, "Rx ctrl pkt len:%d", len);
-                break;
-
-            case WIFI_PKT_DATA:
-                ESP_LOGI(TAG, "Rx data pkt len:%d", len);
-                break;
-
-            case WIFI_PKT_MISC:
-                 ESP_LOGI(TAG, "Rx misc pkt len:%d", len);             
-                len = len > MAC_HEADER_LEN ? MAC_HEADER_LEN : len;
-                break;
-
-            default :
-                len = 0;
-                ESP_LOGE(TAG, "Rx unknown pkt len:%d", len);
-                return;
-        }
-
-        ++seq_buf;
-
-        if (total_num > 1) {
-            *(uint16_t*)(frame + 22) = (seq_buf << 4) | (*(uint16_t*)(frame + 22) & 0xf);
-        }
-    }
-
-    ESP_LOGI(TAG, "Rx ctrl header:");
-
-    for (i = 0; i < 12; i++) {
-        sprintf(printbuf + i * 3, "%02x ", *((uint8_t*)buf + i));
-    }
-
-    ESP_LOGI(TAG, "  - %s", printbuf);
-    ESP_LOGI(TAG, "Data:");
-
-    len = len > SCAN_DATA_LEN ? SCAN_DATA_LEN : len;
-
-    for (i = 0; i < len; i++) {
-        sprintf(printbuf + (i % 16) * 3, "%02x ", *((uint8_t*)frame + i));
-
-        if ((i + 1) % 16 == 0) {
-            ESP_LOGI(TAG, "  - %s", printbuf);
-        }
-    }
-
-    if ((i % 16) != 0) {
-        printbuf[((i) % 16) * 3 - 1] = 0;
-        ESP_LOGI(TAG, "  - %s", printbuf);
-    }
-#endif
+    printf("ssid=%s, cn=%02d, rssi=%02d,"
+		" dest=%02x:%02x:%02x:%02x:%02x:%02x,"
+		" source=%02x:%02x:%02x:%02x:%02x:%02x,"
+		" bssid=%02x:%02x:%02x:%02x:%02x:%02x\n",
+		data.ssid,
+		data.channel,
+		data.rssi,
+	
+		data.dest[0],data.dest[1],data.dest[2],
+		data.dest[3],data.dest[4],data.dest[5],
+	
+		data.source[0],data.source[1],data.source[2],
+		data.source[3],data.source[4],data.source[5],
+		
+		data.bssid[0],data.bssid[1],data.bssid[2],
+		data.bssid[3],data.bssid[4],data.bssid[5]
+	);
 }
 
 static const int START_BIT = BIT0;
@@ -167,11 +97,11 @@ void scan_init()
     ESP_ERROR_CHECK(esp_wifi_start());
 
     struct scan_config_t config = {0};
-    config.channel = 1;
-    //config.filter_mask |= WIFI_PROMIS_FILTER_MASK_MGMT; //Receive management packets
-    config.filter_mask |= WIFI_PROMIS_FILTER_MASK_CTRL; //Receive ctrl packets
-    config.filter_mask |= WIFI_PROMIS_FILTER_MASK_DATA; //Receive data packets
-    config.filter_mask |= WIFI_PROMIS_FILTER_MASK_MISC;
+    config.channel = 8;
+    config.filter_mask |= WIFI_PROMIS_FILTER_MASK_MGMT; //Receive management packets
+    //config.filter_mask |= WIFI_PROMIS_FILTER_MASK_CTRL; //Receive ctrl packets
+    //config.filter_mask |= WIFI_PROMIS_FILTER_MASK_DATA; //Receive data packets
+    //config.filter_mask |= WIFI_PROMIS_FILTER_MASK_MISC;
     //config.filter_frame_payload = true; //Receive data frame payload
 
     scan_channel(&config);

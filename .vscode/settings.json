@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "esp_system.h": "c",
-        "esp_timer.h": "c"
+        "esp_timer.h": "c",
+        "string.h": "c"
     }
 }
