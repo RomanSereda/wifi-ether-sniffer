@@ -1,4 +1,4 @@
-idf_component_register(SRCS "scan.c"
+idf_component_register(SRCS "scan.c" "parser.c"
                        INCLUDE_DIRS .
                        PRIV_INCLUDE_DIRS .
                        PRIV_REQUIRES nvs_flash)

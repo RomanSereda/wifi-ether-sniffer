@@ -2,30 +2,27 @@
 #include "esp_wifi.h"
 #include "esp_system.h"
 #include "esp_event.h"
-#include "nvs_flash.h"
-#include "esp_log.h"
-
+#include "esp_libc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
+#include "parser.h"
 
-#include "esp_libc.h"
-
-#define DEBUG 1
 #ifdef DEBUG
-    #define TAG "scan"
+#include "esp_log.h"
+#define TAG "scan"
+#define MAC_HEADER_LEN 24
+#define SCAN_DATA_LEN 112
+#define MAC_HDR_LEN_MAX 40
+static char printbuf[256];
 #endif
 
-#define MAC_HEADER_LEN 24
-#define SCAN_DATA_LEN 192
-#define MAC_HDR_LEN_MAX 40
-
-static const int START_BIT = BIT0;
-static EventGroupHandle_t wifi_event_group;
-
-static char printbuf[256];
 static void scan_cb(void* buf, wifi_promiscuous_pkt_type_t type)
 {
+    struct frame_data_t data;
+    parse(buf, type, &data);
+
+#ifdef DEBUG
     wifi_pkt_rx_ctrl_t* rx_ctrl = (wifi_pkt_rx_ctrl_t*)buf;
     uint8_t* frame = (uint8_t*)(rx_ctrl + 1);
     uint32_t len = rx_ctrl->sig_mode ? rx_ctrl->HT_length : rx_ctrl->legacy_length;
@@ -45,42 +42,30 @@ static void scan_cb(void* buf, wifi_promiscuous_pkt_type_t type)
             if (seq_buf == 0) {
                 seq_buf = *((uint16_t*)(frame + 22)) >> 4;
             }
-            #ifdef DEBUG
-                ESP_LOGI(TAG, "seq_num:%d, total_num:%d\r\n", seq_buf, total_num);
-            #endif
+            ESP_LOGI(TAG, "seq_num:%d, total_num:%d\r\n", seq_buf, total_num);
         }
 
         switch (type) {
             case WIFI_PKT_MGMT:
-                #ifdef DEBUG
-                    ESP_LOGI(TAG, "Rx mgmt pkt len:%d", len);
-                #endif
+                ESP_LOGI(TAG, "Rx mgmt pkt len:%d", len);
                 break;
 
             case WIFI_PKT_CTRL:
-                #ifdef DEBUG
-                    ESP_LOGI(TAG, "Rx ctrl pkt len:%d", len);
-                #endif
+                ESP_LOGI(TAG, "Rx ctrl pkt len:%d", len);
                 break;
 
             case WIFI_PKT_DATA:
-                #ifdef DEBUG
-                    ESP_LOGI(TAG, "Rx data pkt len:%d", len);
-                #endif
+                ESP_LOGI(TAG, "Rx data pkt len:%d", len);
                 break;
 
             case WIFI_PKT_MISC:
-                #ifdef DEBUG
-                    ESP_LOGI(TAG, "Rx misc pkt len:%d", len);
-                #endif                
+                 ESP_LOGI(TAG, "Rx misc pkt len:%d", len);             
                 len = len > MAC_HEADER_LEN ? MAC_HEADER_LEN : len;
                 break;
 
             default :
                 len = 0;
-                #ifdef DEBUG
-                    ESP_LOGE(TAG, "Rx unknown pkt len:%d", len);
-                #endif
+                ESP_LOGE(TAG, "Rx unknown pkt len:%d", len);
                 return;
         }
 
@@ -91,36 +76,39 @@ static void scan_cb(void* buf, wifi_promiscuous_pkt_type_t type)
         }
     }
 
-    #ifdef DEBUG
-        ESP_LOGI(TAG, "Rx ctrl header:");
-    #endif
+    ESP_LOGI(TAG, "Rx ctrl header:");
 
     for (i = 0; i < 12; i++) {
         sprintf(printbuf + i * 3, "%02x ", *((uint8_t*)buf + i));
     }
 
-    #ifdef DEBUG
-        ESP_LOGI(TAG, "  - %s", printbuf);
-        ESP_LOGI(TAG, "Data:");
-    #endif
+    ESP_LOGI(TAG, "  - %s", printbuf);
+    ESP_LOGI(TAG, "Data:");
 
     len = len > SCAN_DATA_LEN ? SCAN_DATA_LEN : len;
 
     for (i = 0; i < len; i++) {
         sprintf(printbuf + (i % 16) * 3, "%02x ", *((uint8_t*)frame + i));
 
-        #ifdef DEBUG
-            if ((i + 1) % 16 == 0) {
-                ESP_LOGI(TAG, "  - %s", printbuf);
-            }
-        #endif
+        if ((i + 1) % 16 == 0) {
+            ESP_LOGI(TAG, "  - %s", printbuf);
+        }
     }
 
     if ((i % 16) != 0) {
         printbuf[((i) % 16) * 3 - 1] = 0;
-        #ifdef DEBUG
-            ESP_LOGI(TAG, "  - %s", printbuf);
-        #endif
+        ESP_LOGI(TAG, "  - %s", printbuf);
+    }
+#endif
+}
+
+static const int START_BIT = BIT0;
+static EventGroupHandle_t wifi_event_group;
+static void wifi_event_handler(void* arg, esp_event_base_t event_base,
+                                    int32_t event_id, void* event_data)
+{
+    if (event_id == WIFI_EVENT_STA_START) {
+        xEventGroupSetBits(wifi_event_group, START_BIT);
     }
 }
 
@@ -143,14 +131,6 @@ static void scan_task(void* pvParameters)
     vTaskDelete(NULL);
 }
 
-static void wifi_event_handler(void* arg, esp_event_base_t event_base,
-                                    int32_t event_id, void* event_data)
-{
-    if (event_id == WIFI_EVENT_STA_START) {
-        xEventGroupSetBits(wifi_event_group, START_BIT);
-    }
-}
-
 static void scan_channel(struct scan_config_t* config)
 {
     TaskHandle_t taskScanChannel;
@@ -162,16 +142,15 @@ static void scan_channel(struct scan_config_t* config)
     }
 }
 
-#define CONFIG_FILTER_MASK_MGMT 1
-void scan_init()
+static void setup_mac()
 {
-    ets_printf("Starting scan...\n");
-    ESP_ERROR_CHECK(nvs_flash_init());
-
     uint8_t newMACAddress[] = {0x32, 0xAE, 0xA4, 0x07, 0x0D, 0x66};
     esp_base_mac_addr_set(&newMACAddress[0]);
+}
 
-
+void scan_init()
+{
+    setup_mac();
     tcpip_adapter_init();
 
     ESP_ERROR_CHECK(esp_event_loop_create_default());
@@ -189,26 +168,11 @@ void scan_init()
 
     struct scan_config_t config = {0};
     config.channel = 1;
-
-#if CONFIG_FILTER_MASK_MGMT
-    config.filter_mask |= WIFI_PROMIS_FILTER_MASK_MGMT; //Receive management packets
-#endif
-
-#if CONFIG_FILTER_MASK_CTRL
+    //config.filter_mask |= WIFI_PROMIS_FILTER_MASK_MGMT; //Receive management packets
     config.filter_mask |= WIFI_PROMIS_FILTER_MASK_CTRL; //Receive ctrl packets
-#endif
-
-#if CONFIG_FILTER_MASK_DATA
     config.filter_mask |= WIFI_PROMIS_FILTER_MASK_DATA; //Receive data packets
-#endif
-
-#if CONFIG_FILTER_MASK_DATA_FRAME_PAYLOAD
-    config.filter_frame_payload = true; //Receive data frame payload
-#endif
-
-#if CONFIG_FILTER_MASK_MISC
     config.filter_mask |= WIFI_PROMIS_FILTER_MASK_MISC;
-#endif
+    //config.filter_frame_payload = true; //Receive data frame payload
 
     scan_channel(&config);
 }
