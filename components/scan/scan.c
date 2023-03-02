@@ -11,10 +11,13 @@
 
 #include "esp_libc.h"
 
-#define TAG "scan"
+#define DEBUG 1
+#ifdef DEBUG
+    #define TAG "scan"
+#endif
 
 #define MAC_HEADER_LEN 24
-#define SCAN_DATA_LEN 112
+#define SCAN_DATA_LEN 192
 #define MAC_HDR_LEN_MAX 40
 
 static const int START_BIT = BIT0;
@@ -42,31 +45,42 @@ static void scan_cb(void* buf, wifi_promiscuous_pkt_type_t type)
             if (seq_buf == 0) {
                 seq_buf = *((uint16_t*)(frame + 22)) >> 4;
             }
-
-            ESP_LOGI(TAG, "seq_num:%d, total_num:%d\r\n", seq_buf, total_num);
+            #ifdef DEBUG
+                ESP_LOGI(TAG, "seq_num:%d, total_num:%d\r\n", seq_buf, total_num);
+            #endif
         }
 
         switch (type) {
             case WIFI_PKT_MGMT:
-                ESP_LOGI(TAG, "Rx mgmt pkt len:%d", len);
+                #ifdef DEBUG
+                    ESP_LOGI(TAG, "Rx mgmt pkt len:%d", len);
+                #endif
                 break;
 
             case WIFI_PKT_CTRL:
-                ESP_LOGI(TAG, "Rx ctrl pkt len:%d", len);
+                #ifdef DEBUG
+                    ESP_LOGI(TAG, "Rx ctrl pkt len:%d", len);
+                #endif
                 break;
 
             case WIFI_PKT_DATA:
-                ESP_LOGI(TAG, "Rx data pkt len:%d", len);
+                #ifdef DEBUG
+                    ESP_LOGI(TAG, "Rx data pkt len:%d", len);
+                #endif
                 break;
 
             case WIFI_PKT_MISC:
-                ESP_LOGI(TAG, "Rx misc pkt len:%d", len);
+                #ifdef DEBUG
+                    ESP_LOGI(TAG, "Rx misc pkt len:%d", len);
+                #endif                
                 len = len > MAC_HEADER_LEN ? MAC_HEADER_LEN : len;
                 break;
 
             default :
                 len = 0;
-                ESP_LOGE(TAG, "Rx unknown pkt len:%d", len);
+                #ifdef DEBUG
+                    ESP_LOGE(TAG, "Rx unknown pkt len:%d", len);
+                #endif
                 return;
         }
 
@@ -77,29 +91,36 @@ static void scan_cb(void* buf, wifi_promiscuous_pkt_type_t type)
         }
     }
 
-    ESP_LOGI(TAG, "Rx ctrl header:");
+    #ifdef DEBUG
+        ESP_LOGI(TAG, "Rx ctrl header:");
+    #endif
 
     for (i = 0; i < 12; i++) {
         sprintf(printbuf + i * 3, "%02x ", *((uint8_t*)buf + i));
     }
 
-    ESP_LOGI(TAG, "  - %s", printbuf);
-
-    ESP_LOGI(TAG, "Data:");
+    #ifdef DEBUG
+        ESP_LOGI(TAG, "  - %s", printbuf);
+        ESP_LOGI(TAG, "Data:");
+    #endif
 
     len = len > SCAN_DATA_LEN ? SCAN_DATA_LEN : len;
 
     for (i = 0; i < len; i++) {
         sprintf(printbuf + (i % 16) * 3, "%02x ", *((uint8_t*)frame + i));
 
-        if ((i + 1) % 16 == 0) {
-            ESP_LOGI(TAG, "  - %s", printbuf);
-        }
+        #ifdef DEBUG
+            if ((i + 1) % 16 == 0) {
+                ESP_LOGI(TAG, "  - %s", printbuf);
+            }
+        #endif
     }
 
     if ((i % 16) != 0) {
         printbuf[((i) % 16) * 3 - 1] = 0;
-        ESP_LOGI(TAG, "  - %s", printbuf);
+        #ifdef DEBUG
+            ESP_LOGI(TAG, "  - %s", printbuf);
+        #endif
     }
 }
 
