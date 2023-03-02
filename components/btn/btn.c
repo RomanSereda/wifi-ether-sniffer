@@ -8,7 +8,7 @@
 #define BUILDIN_LED 2
 #define BUILDIN_BTN 0
 
-void led_blink(int count)
+static void led_blink(int count)
 {
     count *= 2;
     bool flag = false;
@@ -19,13 +19,13 @@ void led_blink(int count)
     }
 }
 
-void btn_task(void *arg)
+static void btn_task(void *arg)
 {
     while (true) {
         if(!gpio_get_level(BUILDIN_BTN)) {
             led_blink(TRIPLE_BLINK);
         }
-        vTaskDelay(100 / portTICK_RATE_MS);
+        vTaskDelay(50 / portTICK_RATE_MS);
     }
     vTaskDelete(NULL);
 }
@@ -45,8 +45,8 @@ void init_btn()
     BaseType_t result = xTaskCreate(btn_task, "btn_task", 
         configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 3, &taskHandleBtn);
 
-    if(result == pdPASS)
+    if(result != pdPASS)
     {
-        printf("btn error create task: %d\n", result);
+        printf("Btn error, not created task: %d\n", result);
     }
 }
