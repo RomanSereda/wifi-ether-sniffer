@@ -1,7 +1,7 @@
 #pragma once
 #include "esp_wifi.h"
 
-struct __attribute__((packed)) frame_data_t
+struct frame_data_t
 {
     char ssid[32];
     uint8_t dest[6];       

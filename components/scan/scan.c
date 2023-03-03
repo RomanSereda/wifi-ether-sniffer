@@ -14,7 +14,10 @@ static void promiscuous_rx_cb(void* buf, wifi_promiscuous_pkt_type_t type)
     struct frame_data_t data = {0};
     parse(buf, type, &data);
 
-    /*printf("ssid=%s, cn=%02d, rssi=%02d,"
+    time_t timestamp;
+    time(&timestamp);
+
+    printf("ssid=%s, cn=%02d, rssi=%02d,"
 		" dest=%02x:%02x:%02x:%02x:%02x:%02x,"
 		" source=%02x:%02x:%02x:%02x:%02x:%02x,"
 		" bssid=%02x:%02x:%02x:%02x:%02x:%02x\n",
@@ -30,7 +33,7 @@ static void promiscuous_rx_cb(void* buf, wifi_promiscuous_pkt_type_t type)
 		
 		data.bssid[0],data.bssid[1],data.bssid[2],
 		data.bssid[3],data.bssid[4],data.bssid[5]
-	);*/
+	);
 }
 
 static const int START_BIT = BIT0;
