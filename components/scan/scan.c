@@ -8,7 +8,7 @@
 #include "freertos/event_groups.h"
 #include "parser.h"
 
-static void scan_cb(void* buf, wifi_promiscuous_pkt_type_t type)
+static void promiscuous_rx_cb(void* buf, wifi_promiscuous_pkt_type_t type)
 {
     struct frame_data_t data = {0};
     parse(buf, type, &data);
@@ -55,7 +55,7 @@ static void scan_task(void* pvParameters)
     xEventGroupWaitBits(wifi_event_group, START_BIT,
                         false, true, portMAX_DELAY);
     ESP_ERROR_CHECK(esp_wifi_set_channel(config->channel, 0));
-    ESP_ERROR_CHECK(esp_wifi_set_promiscuous_rx_cb(scan_cb));
+    ESP_ERROR_CHECK(esp_wifi_set_promiscuous_rx_cb(promiscuous_rx_cb));
     ESP_ERROR_CHECK(esp_wifi_set_promiscuous_filter(&filter));
     ESP_ERROR_CHECK(esp_wifi_set_promiscuous(true));
     vTaskDelete(NULL);
@@ -72,15 +72,18 @@ static void scan_channel(struct scan_config_t* config)
     }
 }
 
-static void setup_mac()
+static void setup_rand_mac()
 {
-    uint8_t newMACAddress[] = {0x32, 0xAE, 0xA4, 0x07, 0x0D, 0x66};
-    esp_base_mac_addr_set(&newMACAddress[0]);
+    uint8_t mac_address[6];
+    for (int i = 0; i < 6; i++) 
+        mac_address[i] =  rand() % 256;
+
+    ESP_ERROR_CHECK(esp_base_mac_addr_set(&mac_address[0]));
 }
 
 void scan_init()
 {
-    setup_mac();
+    setup_rand_mac();
     tcpip_adapter_init();
 
     ESP_ERROR_CHECK(esp_event_loop_create_default());
