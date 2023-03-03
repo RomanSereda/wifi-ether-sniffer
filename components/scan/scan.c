@@ -7,13 +7,14 @@
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 #include "parser.h"
+#include "container.h"
 
 static void promiscuous_rx_cb(void* buf, wifi_promiscuous_pkt_type_t type)
 {
     struct frame_data_t data = {0};
     parse(buf, type, &data);
 
-    printf("ssid=%s, cn=%02d, rssi=%02d,"
+    /*printf("ssid=%s, cn=%02d, rssi=%02d,"
 		" dest=%02x:%02x:%02x:%02x:%02x:%02x,"
 		" source=%02x:%02x:%02x:%02x:%02x:%02x,"
 		" bssid=%02x:%02x:%02x:%02x:%02x:%02x\n",
@@ -29,7 +30,7 @@ static void promiscuous_rx_cb(void* buf, wifi_promiscuous_pkt_type_t type)
 		
 		data.bssid[0],data.bssid[1],data.bssid[2],
 		data.bssid[3],data.bssid[4],data.bssid[5]
-	);
+	);*/
 }
 
 static const int START_BIT = BIT0;
@@ -84,6 +85,8 @@ static void setup_rand_mac()
 void scan_init()
 {
     setup_rand_mac();
+    init_container();
+
     tcpip_adapter_init();
 
     ESP_ERROR_CHECK(esp_event_loop_create_default());
@@ -101,7 +104,7 @@ void scan_init()
 
     struct scan_config_t config = {0};
     config.channel = 8;
-    config.filter_mask |= WIFI_PROMIS_FILTER_MASK_MGMT; //Receive management packets
+    config.filter_mask |= WIFI_PROMIS_FILTER_MASK_MGMT;   //Receive management packets
     //config.filter_mask |= WIFI_PROMIS_FILTER_MASK_CTRL; //Receive ctrl packets
     //config.filter_mask |= WIFI_PROMIS_FILTER_MASK_DATA; //Receive data packets
     //config.filter_mask |= WIFI_PROMIS_FILTER_MASK_MISC;

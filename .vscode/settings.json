@@ -2,6 +2,8 @@
     "files.associations": {
         "esp_system.h": "c",
         "esp_timer.h": "c",
-        "string.h": "c"
+        "string.h": "c",
+        "container.h": "c",
+        "list.h": "c"
     }
 }
