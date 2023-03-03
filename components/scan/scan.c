@@ -12,10 +12,7 @@
 static void promiscuous_rx_cb(void* buf, wifi_promiscuous_pkt_type_t type)
 {
     struct frame_data_t data = {0};
-    parse(buf, type, &data);
-
-    time_t timestamp;
-    time(&timestamp);
+    if(!parse(buf, &data)) return;
 
     printf("ssid=%s, cn=%02d, rssi=%02d,"
 		" dest=%02x:%02x:%02x:%02x:%02x:%02x,"

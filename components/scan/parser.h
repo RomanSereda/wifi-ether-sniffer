@@ -1,5 +1,6 @@
 #pragma once
-#include "esp_wifi.h"
+#include <stdint.h>
+#include <stdbool.h>
 
 struct frame_data_t
 {
@@ -12,5 +13,5 @@ struct frame_data_t
     uint8_t channel; 
 };
 
-void parse(void* buf, wifi_promiscuous_pkt_type_t type, struct frame_data_t* frame_data);
+bool parse(void* buf, struct frame_data_t* frame_data);
 

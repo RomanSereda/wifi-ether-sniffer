@@ -1,11 +1,12 @@
 #include "parser.h"
 #include <stdint.h>
 #include <string.h>
+#include "esp_wifi.h"
 
 #define FRAME_CONTROL_TYPE_MANAGEMENT 0
 #define FRAME_CONTROL_SUBTYPE_PROBE_REQUEST 4
 
-void parse(void* buf, wifi_promiscuous_pkt_type_t type, struct frame_data_t* frame_data)
+bool parse(void* buf, struct frame_data_t* frame_data)
 {
 	struct frame_ctrl_t
 	{
@@ -26,9 +27,9 @@ void parse(void* buf, wifi_promiscuous_pkt_type_t type, struct frame_data_t* fra
     {
         struct frame_ctrl_t frame_ctrl;
         unsigned duration_id : 16;
-        uint8_t dest[6];         /* receiver address */
-        uint8_t source[6];       /* sender address */
-        uint8_t bssid[6];        /* filtering address */
+        uint8_t addr1[6];         /* receiver address */
+        uint8_t addr2[6];       /* sender address */
+        uint8_t addr3[6];        /* filtering address */
         unsigned sequence_ctrl : 16;
     } ieee80211_mac_hdr_t;
 
@@ -48,12 +49,11 @@ void parse(void* buf, wifi_promiscuous_pkt_type_t type, struct frame_data_t* fra
 	const wifi_promiscuous_pkt_t *pkt = (wifi_promiscuous_pkt_t *)buf;
 	const ieee80211_mac_hdr_t *hdr = &((ieee80211_packet_t*)pkt->payload)->hdr;
 
-	if(hdr->frame_ctrl.type != FRAME_CONTROL_TYPE_MANAGEMENT)
-	{
-		return;
-	}
+	if(hdr->frame_ctrl.type != FRAME_CONTROL_TYPE_MANAGEMENT) return false;
 
-	memcpy(frame_data->dest, hdr->dest, 24);
+	memset(frame_data, 0, sizeof(struct frame_data_t));
+
+	memcpy(frame_data->dest, hdr->addr1, 24);
 	frame_data->rssi = (int8_t)pkt->rx_ctrl.rssi;
 	frame_data->channel = pkt->rx_ctrl.channel;
 	frame_data->len = pkt->rx_ctrl.sig_mode ? pkt->rx_ctrl.HT_length : pkt->rx_ctrl.legacy_length;
@@ -66,4 +66,6 @@ void parse(void* buf, wifi_promiscuous_pkt_type_t type, struct frame_data_t* fra
 			memcpy(frame_data->ssid, pt->data, pt->tag_length);
 		}
 	}
+
+	return true;
 }
