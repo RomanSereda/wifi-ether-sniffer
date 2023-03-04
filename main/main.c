@@ -4,7 +4,7 @@
 
 void app_main(void)
 {
-    scan_init();
+    init_scan();
     init_btn();
 }
 
