@@ -8,7 +8,7 @@
 #include "esp_system.h"
 #include "esp_http_server.h"
 
-
+#ifdef EXAMPLE
 /* An HTTP GET handler */
 esp_err_t hello_get_handler(httpd_req_t *req)
 {
@@ -78,7 +78,7 @@ httpd_uri_t hello = {
 
 /* An HTTP POST handler */
 esp_err_t echo_post_handler(httpd_req_t *req)
-{
+{ ets_printf(".........POST......\n");
     char buf[100];
     int ret, remaining = req->content_len;
 
@@ -119,7 +119,7 @@ httpd_uri_t echo = {
  * registration and deregistration of URI handlers
  */
 esp_err_t ctrl_put_handler(httpd_req_t *req)
-{
+{ets_printf(".........PUT......\n");
     char buf;
     int ret;
 
@@ -154,13 +154,6 @@ httpd_uri_t ctrl = {
     .user_ctx  = NULL
 };
 
-
-void stop_http_service(httpd_handle_t server)
-{
-    ets_printf("Http stoping ...");
-    httpd_stop(server);
-}
-
 httpd_handle_t start_http_service()
 {
     httpd_handle_t server = NULL;
@@ -174,6 +167,90 @@ httpd_handle_t start_http_service()
         httpd_register_uri_handler(server, &hello);
         httpd_register_uri_handler(server, &echo);
         httpd_register_uri_handler(server, &ctrl);
+        return server;
+    }
+
+    ets_printf("Error starting server!");
+    return NULL;
+}
+#endif
+
+const char * html_text = "\
+<html>\
+<head><style> table, th, td { border: 1px solid black; border-collapse: collapse; } td, th { padding: 10px; }</style></head>\
+<body>\
+   <div id='container'></div>\
+   <script>\
+      let jsonData = [\
+            {\
+               name: 'Saurabh',\
+               age: 20,\
+               city: 'Prayagraj'\
+            },\
+            {\
+               name: 'Vipin',\
+               age: 23,\
+               city: 'Lucknow',\
+            },\
+            {\
+               name: 'Saksham',\
+               age: 21,\
+               city: 'Noida'\
+            }\
+         ];\
+      function convert2table() {\
+         let container = document.getElementById('container');\
+         let table = document.createElement('table');\
+         let cols = Object.keys(jsonData[0]);\
+         let thead = document.createElement('thead');\
+         let tr = document.createElement('tr');\
+         cols.forEach((item) => {\
+            let th = document.createElement('th');\
+            th.innerText = item;\
+            tr.appendChild(th);});\
+         thead.appendChild(tr);\
+         table.append(tr);\
+         jsonData.forEach((item) => {\
+            let tr = document.createElement('tr');\
+            let vals = Object.values(item);\
+            vals.forEach((elem) => {\
+               let td = document.createElement('td');\
+               td.innerText = elem;\
+               tr.appendChild(td);});\
+            table.appendChild(tr);});\
+         container.appendChild(table);};\
+     convert2table();\
+   </script>\
+</body>\
+</html>";
+
+//https://www.w3schools.com/bootstrap/tryit.asp?filename=trybs_table_condensed&stacked=h
+
+esp_err_t data_get_handler(httpd_req_t *req)
+{
+    httpd_resp_send(req, html_text, strlen(html_text));
+    return ESP_OK;
+}
+
+void stop_http_service(httpd_handle_t server)
+{
+    ets_printf("Http stoping ...");
+    httpd_stop(server);
+}
+
+httpd_uri_t data = {
+    .uri       = "/",
+    .method    = HTTP_GET,
+    .handler   = data_get_handler
+};
+httpd_handle_t start_http_service()
+{
+    httpd_handle_t server = NULL;
+    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+
+    ets_printf("Starting server on port: '%d'", config.server_port);
+    if (httpd_start(&server, &config) == ESP_OK) {
+        httpd_register_uri_handler(server, &data);
         return server;
     }
 

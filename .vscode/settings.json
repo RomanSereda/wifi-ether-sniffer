@@ -5,6 +5,7 @@
         "string.h": "c",
         "container.h": "c",
         "list.h": "c",
-        "thread": "c"
+        "thread": "c",
+        "cstdlib": "c"
     }
 }
