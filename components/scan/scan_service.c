@@ -1,4 +1,4 @@
-#include "scan.h"
+#include "scan_service.h"
 #include "esp_wifi.h"
 #include "esp_system.h"
 #include "esp_event.h"
@@ -96,23 +96,18 @@ static void scan_task(void* pvParameters)
     vTaskDelete(NULL);
 }
 
-static void setup_rand_mac()
+static bool is_running = false;
+static TaskHandle_t taskScanChannel;
+esp_err_t start_scan_service()
 {
-    uint8_t mac_address[6];
-    for (int i = 0; i < 6; i++) 
-        mac_address[i] =  rand() % 256;
+    if(is_running){
+        ets_printf("Scan can not start, service running");
+        return ESP_FAIL;
+    }
 
-    ESP_ERROR_CHECK(esp_base_mac_addr_set(&mac_address[0]));
-}
-
-void init_scan()
-{
-    setup_rand_mac();
-    init_container();
-
-    tcpip_adapter_init();
-
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
+    if (wifi_event_group != NULL) {
+        return ESP_ERR_INVALID_STATE;
+    }
 
     wifi_event_group = xEventGroupCreate();
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
@@ -120,15 +115,52 @@ void init_scan()
     ESP_ERROR_CHECK(esp_event_handler_register(
         WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL));
 
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+    esp_wifi_set_mode(WIFI_MODE_STA);
     ESP_ERROR_CHECK(esp_wifi_start());
 
-    TaskHandle_t taskScanChannel;
     BaseType_t result = xTaskCreate(scan_task, "scan_task", 
         configMINIMAL_STACK_SIZE * 8, NULL, tskIDLE_PRIORITY + 1, &taskScanChannel);
     if(result != pdPASS)
     {
         ets_printf("Scan error, not created task: %d\n", result);
     }
+
+    is_running = true;
+    return ESP_OK;
+}
+
+esp_err_t stop_scan_service()
+{
+    if(!is_running){
+        ets_printf("Scan can not stop, service not running.");
+        return ESP_FAIL;
+    }
+
+    if (wifi_event_group == NULL) {
+        ets_printf("Scan can not stop, event group not created.");
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    wifi_promiscuous_filter_t filter = {0};
+    ESP_ERROR_CHECK(esp_wifi_set_promiscuous_filter(&filter));
+    ESP_ERROR_CHECK(esp_wifi_set_promiscuous(false));
+
+    vEventGroupDelete(wifi_event_group);
+    wifi_event_group = NULL;
+
+    ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler));
+
+    esp_err_t err = esp_wifi_stop();
+    if (err == ESP_ERR_WIFI_NOT_INIT) {
+        ets_printf("Scan can not stop, wifi not started.");
+        return ESP_ERR_WIFI_NOT_INIT;
+    }
+    ESP_ERROR_CHECK(err);
+
+    ESP_ERROR_CHECK(esp_wifi_deinit());
+    ets_printf("Scan was stoped.");
+
+    is_running = false;
+    return ESP_OK;
 }
 

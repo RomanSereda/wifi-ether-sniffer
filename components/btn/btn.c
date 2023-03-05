@@ -4,11 +4,12 @@
 #include "driver/gpio.h"
 #include "esp_log.h"
 
-#define TRIPLE_BLINK 3
 #define BUILDIN_LED 2
 #define BUILDIN_BTN 0
 
-static void led_blink(int count)
+static invoke_func_t ifunc;
+
+void led_blink(int count)
 {
     count *= 2;
     bool flag = false;
@@ -24,14 +25,16 @@ static void btn_task(void *arg)
     while (true) {
         if(!gpio_get_level(BUILDIN_BTN)) {
             led_blink(TRIPLE_BLINK);
+            if(ifunc) ifunc();
         }
         vTaskDelay(50 / portTICK_RATE_MS);
     }
     vTaskDelete(NULL);
 }
 
-void init_btn()
+void init_btn(invoke_func_t ifnc)
 {
+    ifunc = NULL;
     gpio_set_direction(BUILDIN_LED, GPIO_MODE_OUTPUT);
     gpio_set_level(BUILDIN_LED, true);
 
@@ -43,10 +46,16 @@ void init_btn()
 
     TaskHandle_t taskHandleBtn;
     BaseType_t result = xTaskCreate(btn_task, "btn_task", 
-        configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 3, &taskHandleBtn);
+        configMINIMAL_STACK_SIZE * 32, NULL, tskIDLE_PRIORITY + 3, &taskHandleBtn);
 
     if(result != pdPASS)
     {
-        printf("Btn error, not created task: %d\n", result);
+        ets_printf("Btn error, not created task: %d\n", result);
     }
+    ifunc = ifnc;
+}
+
+void turnoff_blink()
+{
+    gpio_set_level(BUILDIN_LED, true);
 }
