@@ -5,4 +5,4 @@ typedef void(*invoke_func_t)();
 
 void init_btn(invoke_func_t ifnc);
 void led_blink(int count);
-void turnoff_blink();
+void disable_blink();

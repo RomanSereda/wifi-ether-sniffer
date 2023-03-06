@@ -55,7 +55,7 @@ void init_btn(invoke_func_t ifnc)
     ifunc = ifnc;
 }
 
-void turnoff_blink()
+void disable_blink()
 {
     gpio_set_level(BUILDIN_LED, true);
 }

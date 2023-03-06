@@ -85,12 +85,13 @@ static void mode_change_handler()
         ets_printf("Web view mode setted. \n");
         ESP_ERROR_CHECK(stop_scan_service());
         vTaskMissedYield();
+        list2table();
         if(!is_web_running) start_web_service_ex();
     }
     mode = !mode;
 
     vTaskDelete(taskHandleBlink);
-    turnoff_blink();
+    disable_blink();
 }
 
 void app_main(void)
