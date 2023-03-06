@@ -29,6 +29,7 @@
     python2 -m pip install --user -r $IDF_PATH/requirements.txt
 
 #### Build:
+    git clone https://github.com/RomanSereda/wifi-ether-watcher.git
     cd ~/.espressif/wifi-ether-watcher
     make menuconfig
     make flash
