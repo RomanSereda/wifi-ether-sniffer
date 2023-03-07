@@ -68,7 +68,7 @@ static void add_container_ssid(const struct frame_data_t* data, uint8_t external
             last_node_ssid = last_node_ssid->next;
             ssidlen++;
 
-            ets_printf("id: %d\n", id);
+            ets_printf("id: %u\n", id);
         }
         else
         {
