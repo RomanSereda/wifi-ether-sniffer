@@ -38,7 +38,8 @@ static void connect_handler(void* arg, esp_event_base_t event_base,
 static bool is_web_running = false;
 void start_web_service_ex()
 {
-
+    static char connection_name[32] = "delta4802";
+    static char connection_passwd[32] = "214C073001633";
 
     ESP_ERROR_CHECK(start_wifi_service(connection_name, connection_passwd));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &connect_handler, &server));

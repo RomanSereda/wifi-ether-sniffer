@@ -10,30 +10,6 @@
 #include "container.h"
 
 static uint8_t setup_channel = 13;
-static void print_all_ssid_nodes()
-{
-    static int count;
-    if(count != ssid_nodes_len())
-    {
-        struct node_ssid_t *node = ssid_root_node();
-        while (node->id)
-        {
-            ets_printf("%u ch=%u, rssi=%02d, dest=%02x:%02x:%02x:%02x:%02x:%02x, id=%u, ->%s", 
-                node->timestamp,
-                node->channel,	
-                node->rssi,	
-                node->source[0],node->source[1],node->source[2],
-		        node->source[3],node->source[4],node->source[5],
-                node->id, node->ssid);
-
-            ets_printf("\n");
-            node = node->next;
-        };
-
-        ets_printf("\n");
-        count = ssid_nodes_len();
-    }
-}
 static uint32_t milis()
 {
     return (uint32_t)(clock() * 1000 / CLOCKS_PER_SEC);
@@ -43,7 +19,6 @@ static void promiscuous_rx_cb(void* buf, wifi_promiscuous_pkt_type_t type)
     struct frame_data_t data = {0};
     if(parse(buf, &data)){
         containerize(&data, 0 /*setup_channel*/);
-        print_all_ssid_nodes();
     }
 
     static uint32_t start_time;
@@ -101,7 +76,7 @@ static TaskHandle_t taskScanChannel;
 esp_err_t start_scan_service()
 {
     if(is_running){
-        ets_printf("Scan can not start, service running");
+        ets_printf("Scan can not start, service running\n");
         return ESP_FAIL;
     }
 
@@ -132,12 +107,12 @@ esp_err_t start_scan_service()
 esp_err_t stop_scan_service()
 {
     if(!is_running){
-        ets_printf("Scan can not stop, service not running.");
+        ets_printf("Scan can not stop, service not running.\n");
         return ESP_FAIL;
     }
 
     if (wifi_event_group == NULL) {
-        ets_printf("Scan can not stop, event group not created.");
+        ets_printf("Scan can not stop, event group not created.\n");
         return ESP_ERR_INVALID_STATE;
     }
 
@@ -152,13 +127,13 @@ esp_err_t stop_scan_service()
 
     esp_err_t err = esp_wifi_stop();
     if (err == ESP_ERR_WIFI_NOT_INIT) {
-        ets_printf("Scan can not stop, wifi not started.");
+        ets_printf("Scan can not stop, wifi not started.\n");
         return ESP_ERR_WIFI_NOT_INIT;
     }
     ESP_ERROR_CHECK(err);
 
     ESP_ERROR_CHECK(esp_wifi_deinit());
-    ets_printf("Scan was stoped.");
+    ets_printf("Scan was stoped.\n");
 
     is_running = false;
     return ESP_OK;

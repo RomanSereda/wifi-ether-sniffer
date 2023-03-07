@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/param.h>
+#include <time.h>
 
 #include "esp_wifi.h"
 #include "esp_event.h"
@@ -70,9 +71,20 @@ static char* text2tr(const char* str)
     return text;   
 }
 
+static char* tm2tr(const struct tm* timestamp)
+{
+    char* text = (char*)memset(malloc(10), 0 , 10);
+    sprintf(text, "%02d:%02d:%02d", timestamp->tm_hour, 
+        timestamp->tm_min, timestamp->tm_sec);
+
+    text = td_mean_rtd(text);
+    return text;   
+}
+
 static char* html_text = NULL;
 void load_http_table()
 {
+    if(!ssid_nodes_len()) return;
     if(html_text) free(html_text);
 
     struct node_ssid_t *node = ssid_root_node();
@@ -82,7 +94,7 @@ void load_http_table()
         char* rssi      = int2tr(node->rssi);
         char* bssid     = bssid2tr(node);
         char* ssid      = text2tr(node->ssid);
-        char* timestamp = uint2tr(node->timestamp);
+        char* timestamp = tm2tr(&node->timestamp);
         char* channel;
         if(node->channel) channel = uint2tr(node->channel);
         channel = text2tr("none");
@@ -114,7 +126,12 @@ void load_http_table()
 
 static esp_err_t data_get_handler(httpd_req_t *req)
 {
-    httpd_resp_send(req, html_text, strlen(html_text));
+    if(ssid_nodes_len())
+        httpd_resp_send(req, html_text, strlen(html_text));
+    else{
+        const char* text = "<div><h1 style='text-align: center;'>Empty Table</h1><h2 style='text-align: center;'>Need to continue scanning</h2></div>";
+        httpd_resp_send(req, text, strlen(text));
+    }
     return ESP_OK;
 }
 
@@ -128,18 +145,18 @@ httpd_handle_t start_http_service()
     httpd_handle_t server = NULL;
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
 
-    ets_printf("Starting server on port: '%d'", config.server_port);
+    ets_printf("Starting server on port: '%d' \n", config.server_port);
     if (httpd_start(&server, &config) == ESP_OK) {
         httpd_register_uri_handler(server, &data);
         return server;
     }
 
-    ets_printf("Error starting server!");
+    ets_printf("Error starting server!\n");
     return NULL;
 }
 
 void stop_http_service(httpd_handle_t server)
 {
-    ets_printf("Http stoping ...");
+    ets_printf("Http stoping ...\n");
     httpd_stop(server);
 }
