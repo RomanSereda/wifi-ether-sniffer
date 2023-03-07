@@ -1,3 +1,9 @@
+## Wifi scanner/sniffer based on ESP8266 NodeMCU.
+#### Button "flash" switches the microcontroller from scan mode to mode web-view.
+
+
+
+###  Compilation and flashing of the firmware:
 
 #### Create WSL distro:
     wsl --set-default-version 1
