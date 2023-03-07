@@ -16,7 +16,8 @@
     pip install pyserial
     
     sudo usermod -aG dialout <username>
-    sudo chmod -R 777 /dev/<tty> (ttyS1, ttyS2, ttyS3.... COM serial port)
+    sudo chmod -R 777 /dev/<ttySx> 
+        <ttySx> is ttyS1, ttyS2, ttyS3.... as COM1, COM2, COM3 serial port
     
     wget https://dl.espressif.com/dl/xtensa-lx106-elf-gcc8_4_0-esp-2020r3-linux-amd64.tar.gz
     mkdir -p ~/.espressif
@@ -32,4 +33,5 @@
     git clone https://github.com/RomanSereda/wifi-ether-watcher.git
     cd ~/.espressif/wifi-ether-watcher
     make menuconfig
+         WIFI SCAN Configuration  ---> set "WiFi SSID", set "WiFi Password" (your router)
     make flash
