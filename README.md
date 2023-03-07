@@ -1,6 +1,6 @@
 ## Wifi scanner/sniffer based on ESP8266 NodeMCU.
 #### Button "flash" switches the microcontroller from scan mode to mode web-view.
-
+<img src="https://github.com/RomanSereda/wifi-ether-watcher/blob/master/example.png" width="900">
 
 
 ###  Compilation and flashing of the firmware:
