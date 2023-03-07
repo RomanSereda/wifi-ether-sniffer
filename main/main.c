@@ -1,11 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <sys/param.h>
 
+#include "esp_wifi.h"
 #include "esp_netif.h"
 #include "esp_event.h"
-#include "esp_http_server.h"
 #include "nvs_flash.h"
 
 #include "btn.h"
@@ -21,7 +19,7 @@ static void disconnect_handler(void* arg, esp_event_base_t event_base,
 {
     httpd_handle_t* server = (httpd_handle_t*) arg;
     if (*server) {
-        ets_printf("Stopping webserver");
+        ets_printf("Stopping webserver\n");
         stop_http_service(*server);
         *server = NULL;
     }
@@ -32,7 +30,7 @@ static void connect_handler(void* arg, esp_event_base_t event_base,
 {
     httpd_handle_t* server = (httpd_handle_t*) arg;
     if (*server == NULL) {
-        ets_printf("Starting webserver");
+        ets_printf("Starting webserver\n");
         *server = start_http_service();
     }
 }
@@ -40,8 +38,7 @@ static void connect_handler(void* arg, esp_event_base_t event_base,
 static bool is_web_running = false;
 void start_web_service_ex()
 {
-    static char connection_name[32] = "";
-    static char connection_passwd[32] = "";
+
 
     ESP_ERROR_CHECK(start_wifi_service(connection_name, connection_passwd));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &connect_handler, &server));
@@ -52,9 +49,14 @@ void start_web_service_ex()
 void stop_web_service_ex()
 {
     stop_http_service(server);
+    vTaskMissedYield();
+
     ESP_ERROR_CHECK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, &connect_handler));
     ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &disconnect_handler));
     ESP_ERROR_CHECK(stop_wifi_service());
+    do { vTaskDelay(50 / portTICK_RATE_MS); } 
+    while (esp_wifi_get_state() != WIFI_STATE_DEINIT);
+    
     is_web_running = false;
 }
 
@@ -76,16 +78,14 @@ static void mode_change_handler()
     }
 
     if(mode){
-        ets_printf("Scan mode setted. \n");
+        ets_printf("Scan mode setted.\n");
         if(is_web_running) stop_web_service_ex();
-        vTaskMissedYield();
         ESP_ERROR_CHECK(start_scan_service());
     }
     else{
-        ets_printf("Web view mode setted. \n");
+        ets_printf("Web view mode setted.\n");
         ESP_ERROR_CHECK(stop_scan_service());
-        vTaskMissedYield();
-        list2table();
+        load_http_table();
         if(!is_web_running) start_web_service_ex();
     }
     mode = !mode;

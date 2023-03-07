@@ -12,14 +12,14 @@
 
 static const char * html_text_head = "\
 <!DOCTYPE html><html lang='en'><head>\
-  <title>Bootstrap Example</title>\
+  <title>Scan Table</title>\
   <meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'>\
   <link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css'>\
   <script src='https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js'></script>\
   <script src='https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js'></script>\
 </head>\
-<body><div class='container'><h2>Condensed Table</h2>\
-  <p>The .table-condensed class makes a table more compact by cutting cell padding in half:</p><table class='table table-condensed'>\
+<body><div class='container'><h2>ESP8266 Scan Table</h2>\
+  <table class='table table-condensed'>\
     <thead><tr><th>timestamp</th><th>channel</th><th>rssi</th><th>bssid</th><th>ssid</th></tr></thead><tbody>";
 
 static const char * html_text_tail = "</tbody></table></div></body></html>";
@@ -62,7 +62,7 @@ static char* int2tr(int32_t dval)
     return td_mean_rtd(d);   
 }
 
-char* text2tr(const char* str)
+static char* text2tr(const char* str)
 {
     char* text = (char*)memset(malloc(strlen(str)), 0 , strlen(str));
     sprintf(text, "%s", str);
@@ -71,7 +71,7 @@ char* text2tr(const char* str)
 }
 
 static char* html_text = NULL;
-void list2table()
+void load_http_table()
 {
     if(html_text) free(html_text);
 
