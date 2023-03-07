@@ -12,6 +12,9 @@
 #include "wifi_service.h"
 #include "http_service.h"
 
+#define WIFI_SSID CONFIG_ESP_WIFI_SSID
+#define WIFI_PASS CONFIG_ESP_WIFI_PASSWORD
+
 static httpd_handle_t server = NULL;
 
 static void disconnect_handler(void* arg, esp_event_base_t event_base, 
@@ -38,8 +41,8 @@ static void connect_handler(void* arg, esp_event_base_t event_base,
 static bool is_web_running = false;
 void start_web_service_ex()
 {
-    static char connection_name[32] = "delta4802";
-    static char connection_passwd[32] = "214C073001633";
+    static char connection_name[32] = WIFI_SSID;
+    static char connection_passwd[32] = WIFI_PASS;
 
     ESP_ERROR_CHECK(start_wifi_service(connection_name, connection_passwd));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &connect_handler, &server));
