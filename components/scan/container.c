@@ -60,6 +60,7 @@ static void add_container_ssid(const struct frame_data_t* data, uint8_t external
             last_node_ssid->id = id;
             last_node_ssid->rssi = data->rssi;
             last_node_ssid->timestamp = *timestamp;
+            last_node_ssid->channel = data->channel;
             memcpy(last_node_ssid->ssid, data->ssid, 32);
             memcpy(last_node_ssid->source, data->addr2, 6);
             last_node_ssid->next = create_node_ssid();

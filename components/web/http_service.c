@@ -21,7 +21,7 @@ static const char * html_text_head = "\
 </head>\
 <body><div class='container'><h2>ESP8266 Scan Table</h2>\
   <table class='table table-condensed'>\
-    <thead><tr><th>timestamp</th><th>channel</th><th>rssi</th><th>bssid</th><th>ssid</th></tr></thead><tbody>";
+    <thead><tr><th>timestamp</th><th>rssi</th><th>bssid</th><th>ssid</th></tr></thead><tbody>";
 
 static const char * html_text_tail = "</tbody></table></div></body></html>";
 
@@ -95,18 +95,18 @@ void load_http_table()
         char* bssid     = bssid2tr(node);
         char* ssid      = text2tr(node->ssid);
         char* timestamp = tm2tr(&node->timestamp);
-        char* channel;
+        /*char* channel;
         if(node->channel) channel = uint2tr(node->channel);
-        channel = text2tr("none");
+        channel = text2tr("none");*/
 
-        int len = strlen(timestamp) + strlen(channel) 
+        int len = strlen(timestamp) /*+ strlen(channel)*/
             + strlen(rssi)+ strlen(bssid)+ strlen(ssid) + 12;
 
         chunks = (char*)realloc(chunks, len + strlen(chunks));
 
         chunks = strcat(chunks, "<tr>");
         chunks = strcat(chunks, timestamp); free(timestamp);
-        chunks = strcat(chunks, channel);   free(channel);
+        //chunks = strcat(chunks, channel);   free(channel);
         chunks = strcat(chunks, rssi);      free(rssi);
         chunks = strcat(chunks, bssid);     free(bssid);
         chunks = strcat(chunks, ssid);      free(ssid);
