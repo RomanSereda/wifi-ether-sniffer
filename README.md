@@ -41,3 +41,7 @@
     make menuconfig
          WIFI SCAN Configuration  ---> set "WiFi SSID", set "WiFi Password" (your router)
     make flash
+    
+#### Board:: 
+ <img src="https://github.com/RomanSereda/wifi-ether-watcher/blob/master/board1.png" width="400">
+ <img src="https://github.com/RomanSereda/wifi-ether-watcher/blob/master/board2.png" width="400">
